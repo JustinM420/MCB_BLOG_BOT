@@ -4,46 +4,8 @@ import streamlit as st
 import time
 import os
 import json
-import yfinance as yf   
 from dotenv import load_dotenv
 load_dotenv()
-
-def getStockPrice(ticker):
-    # Fetch data for the given ticker symbol
-    stock = yf.Ticker(ticker)
-
-    # Get the latest closing price
-    hist = stock.history(period="1d")
-    latest_price = hist['Close'].iloc[-1]
-
-    return latest_price
-
-
-def handle_function(run):
-    tools_to_call = run.required_action.submit_tool_outputs.tool_calls
-    tools_output_array = []
-    for each_tool in tools_to_call:
-        tool_call_id = each_tool.id
-        function_name = each_tool.function.name
-        function_arg = each_tool.function.arguments
-        print("Tool ID:" + tool_call_id)
-        print("Function to Call:" + function_name )
-        print("Parameters to use:" + function_arg)
-
-        if (function_name == 'get_stock_price'):
-            arguments_str = each_tool.function.arguments
-            arguments_dict = json.loads(arguments_str)
-            symbol = arguments_dict['symbol']
-            st.sidebar.write('get stock price for ', symbol)
-
-            output = getStockPrice(symbol)
-            tools_output_array.append({"tool_call_id": tool_call_id, "output": output})
-
-    client.beta.threads.runs.submit_tool_outputs(
-        thread_id = st.session_state.thread_id,
-        run_id = run.id,
-        tool_outputs=tools_output_array
-    )    
 
 
 # Set your OpenAI Assistant ID here
@@ -63,17 +25,11 @@ if "thread_id" not in st.session_state:
     st.session_state.thread_id = None
 
 # Set up the Streamlit page with a title and icon
-st.set_page_config(page_title="Smart Investment Advisor", page_icon=":moneybag:", layout="wide")
-st.header(":moneybag: Smart Investment Advisor")
+st.set_page_config(page_title="MCB Blog GPT", page_icon=":cookie:", layout="wide")
+st.header(":cookie: MCB Blog GPT")
 
 #Get the OPENAI API Key
-openai_api_key_env = os.getenv('OPENAI_API_KEY')
-openai_api_key = st.sidebar.text_input(
-    'OpenAI API Key', placeholder='sk-', value=openai_api_key_env)
-url = "https://platform.openai.com/account/api-keys"
-st.sidebar.markdown("Get an Open AI Access Key [here](%s). " % url)
-if openai_api_key:
-    openai.api_key = openai_api_key
+openai.api_key = os.getenv('OPENAI_API_KEY')
 
 # Button to start the chat session
 if st.sidebar.button("Start Chat"):
@@ -100,7 +56,7 @@ if st.session_state.start_chat:
             st.markdown(message["content"])
 
     # Chat input for the user
-    if prompt := st.chat_input("How can I help you?"):
+    if prompt := st.chat_input("What are we writing about today?"):
         # Add user message to the state and display it
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
@@ -123,9 +79,6 @@ if st.session_state.start_chat:
         # Poll for the run to complete and retrieve the assistant's messages
         while run.status not in ["completed", "failed"]:
             st.sidebar.write(run.status)
-            if run.status == "requires_action":
-                handle_function(run)
-            time.sleep(1)
             run = client.beta.threads.runs.retrieve(
                 thread_id=st.session_state.thread_id,
                 run_id=run.id
