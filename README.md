@@ -1,1 +1,1 @@
-# AI-based Investment Advisor
+# AI-based Blog Writer specializing in SEO content for Cottage Bakeries 
